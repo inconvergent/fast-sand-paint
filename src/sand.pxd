@@ -13,11 +13,11 @@ cdef class Sand:
   cdef int stride
   cdef double one
   cdef size_t size
-  cdef pixels
+  cdef unsigned char[:] pixels
   cdef readonly sur # cairo ImageSurface
   cdef ctx
 
-  cdef void _operator_over(self, int, char[:], float, float, float, float)
+  cdef void _operator_over(self, int, float, float, float, float)
 
   cpdef void set_bg(self, list rgba)
 
