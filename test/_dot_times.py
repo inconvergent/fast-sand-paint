@@ -4,7 +4,7 @@
 from numpy.random import random
 from time import time
 
-BACK = [0,0,0,0]
+BACK = [0,1,1,1]
 FRONT = [1,1,1,1]
 
 GREEN = [0,1,0,0.1]
@@ -20,7 +20,7 @@ def main():
 
   s = Sand(size)
 
-  s.set_bg(FRONT)
+  s.set_bg(BACK)
 
   t = time()
   aa = random((1000000,2))
