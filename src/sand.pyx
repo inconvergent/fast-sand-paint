@@ -159,13 +159,11 @@ cdef class Sand:
     for i in xrange(n):
       dx = xyb[i,0]-xya[i,0]
       dy = xyb[i,1]-xya[i,1]
-      dd = sqrt(dx*dx+dy*dy)
-      gamma = atan2(dy, dx)
 
       for j in xrange(grains):
-        rnd = _random()*dd
-        pa = xya[i,0]+rnd*cos(gamma)
-        pb = xya[i,1]+rnd*sin(gamma)
+        rnd = _random()
+        pa = xya[i,0]+rnd*dx
+        pb = xya[i,1]+rnd*dy
         if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
           continue
         o = <int>floor((pb)*h)*self.stride+<int>floor((pa)*w)*4
