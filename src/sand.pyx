@@ -5,12 +5,7 @@ from __future__ import division
 
 cimport cython
 
-from libc.math cimport cos
-from libc.math cimport atan2
-from libc.math cimport sin
-from libc.math cimport sqrt
 from libc.math cimport floor
-from libc.math cimport fabs
 
 from helpers cimport _random
 from helpers cimport _char_to_float
