@@ -126,8 +126,6 @@ cdef class Sand:
         continue
       o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
       self._operator_over(o)
-      print(self.raw_pixels[o+3], _double_to_char(self.raw_pixels[o+3]))
-      print('asdf')
     return
 
   @cython.wraparound(False)
@@ -145,6 +143,9 @@ cdef class Sand:
 
     cdef double pa
     cdef double pb
+    cdef double dx
+    cdef double dy
+    cdef double rnd
 
     cdef int o = 0
     cdef int i = 0
@@ -168,7 +169,6 @@ cdef class Sand:
     cdef int ii
     for i in xrange(self.w*self.h):
       ii = 4*i
-      # print(self.raw_pixels[ii], self.raw_pixels[ii+3])
       self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
       self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
       self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
