@@ -12,16 +12,21 @@ cdef class Sand:
   cdef int h
   cdef int stride
   cdef double one
+  cdef double rA
+  cdef double gA
+  cdef double bA
+  cdef double aA
   cdef size_t size
   cdef unsigned char[:] pixels
   cdef readonly sur # cairo ImageSurface
   cdef ctx
 
-  cdef void _operator_over(self, int, float, float, float, float)
+  cdef void _operator_over(self, int)
 
   cpdef void set_bg(self, list rgba)
+  cpdef void set_rgba(self, list rgba)
 
-  cpdef void paint_dots(self, double[:,:], list)
-  cpdef void paint_strokes(self, double[:,:], double[:,:], int, list)
+  cpdef void paint_dots(self, double[:,:])
+  cpdef void paint_strokes(self, double[:,:], double[:,:], int)
   cpdef write_to_png(self, str)
 

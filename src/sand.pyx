@@ -8,8 +8,8 @@ cimport cython
 from libc.math cimport floor
 
 from helpers cimport _random
-from helpers cimport _char_to_float
-from helpers cimport _float_to_char
+from helpers cimport _char_to_double
+from helpers cimport _double_to_char
 
 
 from cpython cimport array
@@ -25,6 +25,11 @@ cdef class Sand:
 
     self.one = 1.0/<double>(s)
 
+    self.rA = 0.0
+    self.gA = 0.0
+    self.bA = 0.0
+    self.aA = 1.0
+
     self.stride = cairo.ImageSurface.format_stride_for_width(
         cairo.FORMAT_ARGB32,
         self.w
@@ -38,6 +43,7 @@ cdef class Sand:
         self.h
         )
     self.ctx = cairo.Context(self.sur)
+    self.set_bg([1,1,1,1])
 
   def __cinit__(self, int s):
     return
@@ -52,19 +58,19 @@ cdef class Sand:
     cdef int i
     cdef int ii
 
-    cdef float r = <float>rgba[0]
-    cdef float g = <float>rgba[1]
-    cdef float b = <float>rgba[2]
-    cdef float a = <float>rgba[3]
+    cdef double r = <double>rgba[0]
+    cdef double g = <double>rgba[1]
+    cdef double b = <double>rgba[2]
+    cdef double a = <double>rgba[3]
 
     r = r*a
     g = g*a
     b = b*a
 
-    cdef unsigned char _r = _float_to_char(r)
-    cdef unsigned char _g = _float_to_char(g)
-    cdef unsigned char _b = _float_to_char(b)
-    cdef unsigned char _a = _float_to_char(a)
+    cdef unsigned char _r = _double_to_char(r)
+    cdef unsigned char _g = _double_to_char(g)
+    cdef unsigned char _b = _double_to_char(b)
+    cdef unsigned char _a = _double_to_char(a)
 
     for i in xrange(self.w*self.h):
       ii = 4*i
@@ -77,36 +83,44 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cdef void _operator_over(self, int o, float rA, float gA, float bA, float aA):
-    # https://www.cairographics.org/operators/
-    # https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BPremultiplied%20alpha%20part%202%5D%5D
-    cdef float bB = _char_to_float(self.pixels[o])
-    cdef float gB = _char_to_float(self.pixels[o+1])
-    cdef float rB = _char_to_float(self.pixels[o+2])
-    cdef float aB = _char_to_float(self.pixels[o+3])
+  cpdef void set_rgba(self, list rgba):
+    cdef double rA = <double>rgba[0]
+    cdef double gA = <double>rgba[1]
+    cdef double bA = <double>rgba[2]
+    cdef double aA = <double>rgba[3]
 
-    self.pixels[o] = _float_to_char( bA + bB*(1.0-aA) )
-    self.pixels[o+1] = _float_to_char( gA + gB*(1.0-aA) )
-    self.pixels[o+2] = _float_to_char( rA + rB*(1.0-aA) )
-    self.pixels[o+3] = _float_to_char( aA + aB*(1.0-aA) )
+    self.rA = rA*aA
+    self.gA = gA*aA
+    self.bA = bA*aA
+    self.aA = aA
+    return
 
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef void paint_dots(self, double[:,:] xya, list rgba):
+  cdef void _operator_over(self, int o):
+    # https://www.cairographics.org/operators/
+    # https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BPremultiplied%20alpha%20part%202%5D%5D
+    cdef double bB = _char_to_double(self.pixels[o])
+    cdef double gB = _char_to_double(self.pixels[o+1])
+    cdef double rB = _char_to_double(self.pixels[o+2])
+    cdef double aB = _char_to_double(self.pixels[o+3])
+
+    cdef double invaA = 1.0 - self.aA
+
+    self.pixels[o] = _double_to_char( self.bA + bB*invaA )
+    self.pixels[o+1] = _double_to_char( self.gA + gB*invaA )
+    self.pixels[o+2] = _double_to_char( self.rA + rB*invaA )
+    self.pixels[o+3] = _double_to_char( self.aA + aB*invaA )
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void paint_dots(self, double[:,:] xya):
 
     cdef int w = self.w
     cdef int h = self.h
     cdef int n = len(xya)
-
-    cdef float r = <float>rgba[0]
-    cdef float g = <float>rgba[1]
-    cdef float b = <float>rgba[2]
-    cdef float a = <float>rgba[3]
-
-    r = r*a
-    g = g*a
-    b = b*a
 
     cdef double pa
     cdef double pb
@@ -118,8 +132,8 @@ cdef class Sand:
       pb = xya[i,1]
       if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
         continue
-      o = <int>floor((pb)*h)*self.stride+<int>floor((pa)*w)*4
-      self._operator_over(o, r, g, b, a)
+      o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
+      self._operator_over(o)
     return
 
   @cython.wraparound(False)
@@ -129,21 +143,11 @@ cdef class Sand:
       self,
       double[:,:] xya,
       double[:,:] xyb,
-      int grains,
-      list rgba
+      int grains
       ):
     cdef int w = self.w
     cdef int h = self.h
     cdef int n = len(xya)
-
-    cdef float r = <float>rgba[0]
-    cdef float g = <float>rgba[1]
-    cdef float b = <float>rgba[2]
-    cdef float a = <float>rgba[3]
-
-    r = r*a
-    g = g*a
-    b = b*a
 
     cdef double pa
     cdef double pb
@@ -161,8 +165,8 @@ cdef class Sand:
         pb = xya[i,1]+rnd*dy
         if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
           continue
-        o = <int>floor((pb)*h)*self.stride+<int>floor((pa)*w)*4
-        self._operator_over(o, r, g, b, a)
+        o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
+        self._operator_over(o)
     return
 
   cpdef write_to_png(self, str name):
