@@ -36,6 +36,7 @@ cdef class Sand:
         )
     self.size = self.h * self.stride
     self.pixels = array.array('B',(0, )*self.size)
+    self.raw_pixels = array.array('d',(0, )*self.size)
     self.sur = cairo.ImageSurface.create_for_data(
         self.pixels,
         cairo.FORMAT_ARGB32,
@@ -63,21 +64,12 @@ cdef class Sand:
     cdef double b = <double>rgba[2]
     cdef double a = <double>rgba[3]
 
-    r = r*a
-    g = g*a
-    b = b*a
-
-    cdef unsigned char _r = _double_to_char(r)
-    cdef unsigned char _g = _double_to_char(g)
-    cdef unsigned char _b = _double_to_char(b)
-    cdef unsigned char _a = _double_to_char(a)
-
     for i in xrange(self.w*self.h):
       ii = 4*i
-      self.pixels[ii] = _b
-      self.pixels[ii+1] = _g
-      self.pixels[ii+2] = _r
-      self.pixels[ii+3] = _a
+      self.raw_pixels[ii] = b*a
+      self.raw_pixels[ii+1] = g*a
+      self.raw_pixels[ii+2] = r*a
+      self.raw_pixels[ii+3] = a
     return
 
   @cython.wraparound(False)
@@ -101,17 +93,17 @@ cdef class Sand:
   cdef void _operator_over(self, int o):
     # https://www.cairographics.org/operators/
     # https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BPremultiplied%20alpha%20part%202%5D%5D
-    cdef double bB = _char_to_double(self.pixels[o])
-    cdef double gB = _char_to_double(self.pixels[o+1])
-    cdef double rB = _char_to_double(self.pixels[o+2])
-    cdef double aB = _char_to_double(self.pixels[o+3])
+    cdef double bB = self.raw_pixels[o]
+    cdef double gB = self.raw_pixels[o+1]
+    cdef double rB = self.raw_pixels[o+2]
+    cdef double aB = self.raw_pixels[o+3]
 
     cdef double invaA = 1.0 - self.aA
 
-    self.pixels[o] = _double_to_char( self.bA + bB*invaA )
-    self.pixels[o+1] = _double_to_char( self.gA + gB*invaA )
-    self.pixels[o+2] = _double_to_char( self.rA + rB*invaA )
-    self.pixels[o+3] = _double_to_char( self.aA + aB*invaA )
+    self.raw_pixels[o] = self.bA + bB*invaA
+    self.raw_pixels[o+1] = self.gA + gB*invaA
+    self.raw_pixels[o+2] = self.rA + rB*invaA
+    self.raw_pixels[o+3] = self.aA + aB*invaA
 
   @cython.wraparound(False)
   @cython.boundscheck(False)
@@ -134,6 +126,8 @@ cdef class Sand:
         continue
       o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
       self._operator_over(o)
+      print(self.raw_pixels[o+3], _double_to_char(self.raw_pixels[o+3]))
+      print('asdf')
     return
 
   @cython.wraparound(False)
@@ -170,5 +164,15 @@ cdef class Sand:
     return
 
   cpdef write_to_png(self, str name):
+    cdef int i
+    cdef int ii
+    for i in xrange(self.w*self.h):
+      ii = 4*i
+      # print(self.raw_pixels[ii], self.raw_pixels[ii+3])
+      self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
+      self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
+      self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
+      self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3])
+
     self.sur.write_to_png(name)
 

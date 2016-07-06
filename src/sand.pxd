@@ -18,6 +18,7 @@ cdef class Sand:
   cdef double aA
   cdef size_t size
   cdef unsigned char[:] pixels
+  cdef double[:] raw_pixels
   cdef readonly sur # cairo ImageSurface
   cdef ctx
 
