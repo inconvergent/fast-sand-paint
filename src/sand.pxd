@@ -17,17 +17,20 @@ cdef class Sand:
   cdef double bA
   cdef double aA
   cdef size_t size
+
   cdef unsigned char[:] pixels
   cdef double[:] raw_pixels
+
   cdef readonly sur # cairo ImageSurface
   cdef ctx
 
-  cdef void _operator_over(self, int)
+  cdef void _operator_over(self, int) nogil
 
   cpdef void set_bg(self, list rgba)
   cpdef void set_rgba(self, list rgba)
 
   cpdef void paint_dots(self, double[:,:])
   cpdef void paint_strokes(self, double[:,:], double[:,:], int)
+
   cpdef write_to_png(self, str)
 

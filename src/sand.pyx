@@ -64,12 +64,13 @@ cdef class Sand:
     cdef double b = <double>rgba[2]
     cdef double a = <double>rgba[3]
 
-    for i in xrange(self.w*self.h):
-      ii = 4*i
-      self.raw_pixels[ii] = b*a
-      self.raw_pixels[ii+1] = g*a
-      self.raw_pixels[ii+2] = r*a
-      self.raw_pixels[ii+3] = a
+    with nogil:
+      for i in xrange(self.w*self.h):
+        ii = 4*i
+        self.raw_pixels[ii] = b*a
+        self.raw_pixels[ii+1] = g*a
+        self.raw_pixels[ii+2] = r*a
+        self.raw_pixels[ii+3] = a
     return
 
   @cython.wraparound(False)
@@ -81,16 +82,17 @@ cdef class Sand:
     cdef double bA = <double>rgba[2]
     cdef double aA = <double>rgba[3]
 
-    self.rA = rA*aA
-    self.gA = gA*aA
-    self.bA = bA*aA
-    self.aA = aA
+    with nogil:
+      self.rA = rA*aA
+      self.gA = gA*aA
+      self.bA = bA*aA
+      self.aA = aA
     return
 
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cdef void _operator_over(self, int o):
+  cdef void _operator_over(self, int o) nogil:
     # https://www.cairographics.org/operators/
     # https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BPremultiplied%20alpha%20part%202%5D%5D
     cdef double bB = self.raw_pixels[o]
@@ -119,13 +121,14 @@ cdef class Sand:
 
     cdef int o = 0
     cdef int i = 0
-    for i in xrange(n):
-      pa = xya[i,0]
-      pb = xya[i,1]
-      if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
-        continue
-      o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
-      self._operator_over(o)
+    with nogil:
+      for i in xrange(n):
+        pa = xya[i,0]
+        pb = xya[i,1]
+        if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
+          continue
+        o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
+        self._operator_over(o)
     return
 
   @cython.wraparound(False)
@@ -150,29 +153,34 @@ cdef class Sand:
     cdef int o = 0
     cdef int i = 0
 
-    for i in xrange(n):
-      dx = xyb[i,0]-xya[i,0]
-      dy = xyb[i,1]-xya[i,1]
+    with nogil:
+      for i in xrange(n):
+        dx = xyb[i,0]-xya[i,0]
+        dy = xyb[i,1]-xya[i,1]
 
-      for j in xrange(grains):
-        rnd = _random()
-        pa = xya[i,0]+rnd*dx
-        pb = xya[i,1]+rnd*dy
-        if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
-          continue
-        o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
-        self._operator_over(o)
+        for j in xrange(grains):
+          rnd = _random()
+          pa = xya[i,0]+rnd*dx
+          pb = xya[i,1]+rnd*dy
+          if pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
+            continue
+          o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
+          self._operator_over(o)
     return
 
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
   cpdef write_to_png(self, str name):
     cdef int i
     cdef int ii
-    for i in xrange(self.w*self.h):
-      ii = 4*i
-      self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
-      self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
-      self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
-      self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3])
+    with nogil:
+      for i in xrange(self.w*self.h):
+        ii = 4*i
+        self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
+        self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
+        self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
+        self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3])
 
     self.sur.write_to_png(name)
 
