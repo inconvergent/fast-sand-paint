@@ -21,13 +21,21 @@ cdef class Sand:
   cdef unsigned char[:] pixels
   cdef double[:] raw_pixels
 
-  cdef readonly sur # cairo ImageSurface
+  cdef readonly sur
   cdef ctx
 
-  cdef void _operator_over(self, int) nogil
+  cdef void _transfer_pixels(self) nogil
 
-  cpdef void set_bg(self, list rgba)
-  cpdef void set_rgba(self, list rgba)
+  cdef void _operator_over(self, int) nogil
+  # cdef void _operator_over_mix(self, int, int) nogil
+  cdef void _operator_swap(self, int, int) nogil
+
+  cpdef void set_bg(self, list)
+  cpdef void set_bg_from_image(self, str)
+  cpdef void set_rgba(self, list)
+
+  cpdef void distort_dots_swap(self, double[:,:] xya)
+  cpdef void distort_dots_wind(self, double[:,:] xya)
 
   cpdef void paint_dots(self, double[:,:])
   cpdef void paint_strokes(self, double[:,:], double[:,:], int)

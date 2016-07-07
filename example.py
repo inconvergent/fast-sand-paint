@@ -3,6 +3,7 @@
 
 
 BACK = [1,1,1,1]
+LIGHT = [0,0,0,0.01]
 
 GREEN = [0,1,0,0.1]
 BLUE = [0,0,1,0.1]
@@ -34,15 +35,37 @@ def random_dots():
   s.paint_dots(bb)
   s.set_rgba(BLUE)
   s.paint_dots(cc)
-  s.write_to_png('./out.png')
+  s.write_to_png('./out_random.png')
+
+def bg_img():
+  from sand import Sand
+  from numpy.random import random
+
+  size = 2560
+  num = 10000000
+
+  s = Sand(size)
+
+  s.set_bg_from_image('./data/img.jpg')
+
+  aa = random((num,2))
+  aa[:,0]*=0.5
+
+  s.set_rgba(LIGHT)
+  s.paint_dots(aa)
+  s.write_to_png('./out_bg.png')
 
 
 def main():
   from time import time
 
+  # t1 = time()
+  # random_dots()
+  # print('random_dots', time()-t1)
+
   t1 = time()
-  random_dots()
-  print('random_dots', time()-t1)
+  bg_img()
+  print('bg_img', time()-t1)
 
 
 
