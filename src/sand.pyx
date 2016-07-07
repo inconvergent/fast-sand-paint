@@ -8,6 +8,7 @@ cimport cython
 from libc.math cimport floor
 
 from helpers cimport _random
+from helpers cimport _randint
 from helpers cimport _char_to_double
 from helpers cimport _double_to_char
 
@@ -76,6 +77,49 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
+  cpdef void set_bg_from_image(self, str fn):
+    ## TODO: this is slow.
+    from PIL import Image
+    cdef int i
+    cdef int ii
+    cdef int j
+    cdef int h
+    cdef int w
+
+    cdef double r
+    cdef double g
+    cdef double b
+
+    cdef double a = 1.0
+
+    cdef double scale = 1./255.
+    cdef im = Image.open(fn)
+
+    w,h = im.size
+    if w!=self.w or h!=self.h:
+      raise ValueError('bg image must be same size as sand canvas')
+
+    cdef list data = list(im.convert('RGB').getdata())
+    cdef tuple triple
+
+    cdef int k = 0
+    for i in range(w):
+      for j in range(h):
+        ii = 4*(i*h+j)
+        triple = data[k]
+        r = <double>triple[0]
+        g = <double>triple[1]
+        b = <double>triple[2]
+        self.raw_pixels[ii] = b*scale
+        self.raw_pixels[ii+1] = g*scale
+        self.raw_pixels[ii+2] = r*scale
+        self.raw_pixels[ii+3] = a
+        k += 1
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
   cpdef void set_rgba(self, list rgba):
     cdef double rA = <double>rgba[0]
     cdef double gA = <double>rgba[1]
@@ -110,8 +154,53 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef void paint_dots(self, double[:,:] xya):
+  cdef void _operator_over_mix(self, int oa, int ob) nogil:
 
+    cdef double aA = 0.01
+    cdef double bA = self.raw_pixels[oa]*aA
+    cdef double gA = self.raw_pixels[oa+1]*aA
+    cdef double rA = self.raw_pixels[oa+2]*aA
+
+    cdef double bB = self.raw_pixels[ob]
+    cdef double gB = self.raw_pixels[ob+1]
+    cdef double rB = self.raw_pixels[ob+2]
+    cdef double aB = 1.0
+
+    cdef double invaA = 1.0 - aA
+    self.raw_pixels[ob] = bA + bB*invaA
+    self.raw_pixels[ob+1] = gA + gB*invaA
+    self.raw_pixels[ob+2] = rA + rB*invaA
+    self.raw_pixels[ob+3] = aA + aB*invaA
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _operator_swap(self, int oa, int ob) nogil:
+
+    cdef double bA = self.raw_pixels[oa]
+    cdef double gA = self.raw_pixels[oa+1]
+    cdef double rA = self.raw_pixels[oa+2]
+    cdef double aA = self.raw_pixels[oa+3]
+
+    cdef double bB = self.raw_pixels[ob]
+    cdef double gB = self.raw_pixels[ob+1]
+    cdef double rB = self.raw_pixels[ob+2]
+    cdef double aB = self.raw_pixels[ob+3]
+
+    self.raw_pixels[ob] = bA
+    self.raw_pixels[ob+1] = gA
+    self.raw_pixels[ob+2] = rA
+    self.raw_pixels[ob+3] = aA
+
+    self.raw_pixels[oa] = bB
+    self.raw_pixels[oa+1] = gB
+    self.raw_pixels[oa+2] = rB
+    self.raw_pixels[oa+3] = aB
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void paint_dots(self, double[:,:] xya):
     cdef int w = self.w
     cdef int h = self.h
     cdef int n = len(xya)
@@ -129,6 +218,48 @@ cdef class Sand:
           continue
         o = <int>floor(pb*h)*self.stride+<int>floor(pa*w)*4
         self._operator_over(o)
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void distort_dots(self, double[:,:] xya):
+    cdef int w = self.w
+    cdef int h = self.h
+    cdef int n = len(xya)
+    cdef int aa
+    cdef int bb
+
+    cdef double ax
+    cdef double ay
+    cdef double bx
+    cdef double by
+
+    cdef int oa = 0
+    cdef int ob = 0
+    cdef int i = 0
+    with nogil:
+      for i in xrange(n):
+
+        aa = _randint(n)
+        bb = _randint(n)
+
+        ax = xya[aa,0]
+        ay = xya[aa,1]
+        bx = xya[bb,0]
+        by = xya[bb,1]
+        if ax<0 or ax>=1.0 or ay<0 or ay>=1.0:
+          continue
+        if bx<0 or bx>=1.0 or by<0 or by>=1.0:
+          continue
+
+        oa = <int>floor(ay*h)*self.stride+<int>floor(ax*w)*4
+        ob = <int>floor(by*h)*self.stride+<int>floor(bx*w)*4
+
+        self._operator_swap(
+            oa,
+            ob,
+            )
     return
 
   @cython.wraparound(False)
