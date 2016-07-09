@@ -13,7 +13,6 @@ from helpers cimport _4max
 from helpers cimport _min
 from helpers cimport _4min
 from helpers cimport _randint
-from helpers cimport _char_to_double
 from helpers cimport _double_to_char
 
 
@@ -60,15 +59,15 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cdef void _transfer_pixels(self) nogil:
+  cdef void _transfer_pixels(self, double gamma) nogil:
     cdef int i
     cdef int ii
     for i in xrange(self.w*self.h):
       ii = 4*i
-      self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
-      self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
-      self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
-      self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3])
+      self.pixels[ii] = _double_to_char(self.raw_pixels[ii], gamma)
+      self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1], gamma)
+      self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2], gamma)
+      self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3], gamma)
 
   @cython.wraparound(False)
   @cython.boundscheck(False)
@@ -405,8 +404,8 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef write_to_png(self, str name):
-    self._transfer_pixels()
+  cpdef void write_to_png(self, str name, double gamma=1.0):
+    self._transfer_pixels(gamma)
     # self._find_max_rgba()
     # self._find_min_rgba()
     self.sur.write_to_png(name)

@@ -24,7 +24,7 @@ cdef class Sand:
   cdef readonly sur
   cdef ctx
 
-  cdef void _transfer_pixels(self) nogil
+  cdef void _transfer_pixels(self, double) nogil
 
   cdef void _operator_over(self, int) nogil
   # cdef void _operator_over_mix(self, int, int) nogil
@@ -37,11 +37,11 @@ cdef class Sand:
   cpdef void set_bg_from_image(self, str)
   cpdef void set_rgba(self, list)
 
-  cpdef void distort_dots_swap(self, double[:,:] xya)
-  cpdef void distort_dots_wind(self, double[:,:] xya)
+  cpdef void distort_dots_swap(self, double[:,:])
+  cpdef void distort_dots_wind(self, double[:,:])
 
   cpdef void paint_dots(self, double[:,:])
   cpdef void paint_strokes(self, double[:,:], double[:,:], int)
 
-  cpdef write_to_png(self, str)
+  cpdef void write_to_png(self, str, double gamma=*)
 
