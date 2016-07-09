@@ -24,16 +24,23 @@ cdef class Sand:
   cdef readonly sur
   cdef ctx
 
+  cdef void _transfer_pixels(self) nogil
+
   cdef void _operator_over(self, int) nogil
-  cdef void _operator_over_mix(self, int, int) nogil
+  # cdef void _operator_over_mix(self, int, int) nogil
   cdef void _operator_swap(self, int, int) nogil
+
+  cdef void _find_max_rgba(self)
+  cdef void _find_min_rgba(self)
 
   cpdef void set_bg(self, list)
   cpdef void set_bg_from_image(self, str)
   cpdef void set_rgba(self, list)
 
+  cpdef void distort_dots_swap(self, double[:,:] xya)
+  cpdef void distort_dots_wind(self, double[:,:] xya)
+
   cpdef void paint_dots(self, double[:,:])
-  cpdef void distort_dots(self, double[:,:] xya)
   cpdef void paint_strokes(self, double[:,:], double[:,:], int)
 
   cpdef write_to_png(self, str)

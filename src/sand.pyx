@@ -8,6 +8,10 @@ cimport cython
 from libc.math cimport floor
 
 from helpers cimport _random
+from helpers cimport _max
+from helpers cimport _4max
+from helpers cimport _min
+from helpers cimport _4min
 from helpers cimport _randint
 from helpers cimport _char_to_double
 from helpers cimport _double_to_char
@@ -51,6 +55,129 @@ cdef class Sand:
     return
 
   def __dealloc__(self):
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _transfer_pixels(self) nogil:
+    cdef int i
+    cdef int ii
+    for i in xrange(self.w*self.h):
+      ii = 4*i
+      self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
+      self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
+      self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
+      self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3])
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _operator_over(self, int o) nogil:
+    # https://www.cairographics.org/operators/
+    # https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BPremultiplied%20alpha%20part%202%5D%5D
+    cdef double bB = self.raw_pixels[o]
+    cdef double gB = self.raw_pixels[o+1]
+    cdef double rB = self.raw_pixels[o+2]
+    cdef double aB = self.raw_pixels[o+3]
+
+    cdef double invaA = 1.0 - self.aA
+
+    self.raw_pixels[o] = self.bA + bB*invaA
+    self.raw_pixels[o+1] = self.gA + gB*invaA
+    self.raw_pixels[o+2] = self.rA + rB*invaA
+    self.raw_pixels[o+3] = self.aA + aB*invaA
+
+  # @cython.wraparound(False)
+  # @cython.boundscheck(False)
+  # @cython.nonecheck(False)
+  # cdef void _operator_over_mix(self, int oa, int ob) nogil:
+  #   cdef double aA = 0.05
+  #   cdef double bA = self.raw_pixels[oa]*aA
+  #   cdef double gA = self.raw_pixels[oa+1]*aA
+  #   cdef double rA = self.raw_pixels[oa+2]*aA
+  #
+  #   cdef double bB = self.raw_pixels[ob]
+  #   cdef double gB = self.raw_pixels[ob+1]
+  #   cdef double rB = self.raw_pixels[ob+2]
+  #   cdef double aB = 1.0
+  #
+  #   cdef double invaA = 1.0 - aA
+  #   self.raw_pixels[ob] = bA + bB*invaA
+  #   self.raw_pixels[ob+1] = gA + gB*invaA
+  #   self.raw_pixels[ob+2] = rA + rB*invaA
+  #   self.raw_pixels[ob+3] = aA + aB*invaA
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _operator_swap(self, int oa, int ob) nogil:
+    cdef double bA = self.raw_pixels[oa]
+    cdef double gA = self.raw_pixels[oa+1]
+    cdef double rA = self.raw_pixels[oa+2]
+    cdef double aA = self.raw_pixels[oa+3]
+
+    cdef double bB = self.raw_pixels[ob]
+    cdef double gB = self.raw_pixels[ob+1]
+    cdef double rB = self.raw_pixels[ob+2]
+    cdef double aB = self.raw_pixels[ob+3]
+
+    self.raw_pixels[ob] = bA
+    self.raw_pixels[ob+1] = gA
+    self.raw_pixels[ob+2] = rA
+    self.raw_pixels[ob+3] = aA
+
+    self.raw_pixels[oa] = bB
+    self.raw_pixels[oa+1] = gB
+    self.raw_pixels[oa+2] = rB
+    self.raw_pixels[oa+3] = aB
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _find_min_rgba(self):
+    #TODO: return values if i need them
+    cdef int i = 0
+    cdef int ii = 0
+    cdef double mb = self.raw_pixels[ii]
+    cdef double mg = self.raw_pixels[ii+1]
+    cdef double mr = self.raw_pixels[ii+2]
+    cdef double ma = self.raw_pixels[ii+3]
+
+    with nogil:
+      for i in xrange(self.w*self.h):
+        ii = 4*i
+        mb = _min(mb, self.raw_pixels[ii])
+        mg = _min(mg, self.raw_pixels[ii+1])
+        mr = _min(mr, self.raw_pixels[ii+2])
+        ma = _min(ma, self.raw_pixels[ii+3])
+
+    print('min', mr, mg, mb, ma)
+
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _find_max_rgba(self):
+    #TODO: return values if i need them
+    cdef int i = 0
+    cdef int ii = 0
+    cdef double mb = self.raw_pixels[ii]
+    cdef double mg = self.raw_pixels[ii+1]
+    cdef double mr = self.raw_pixels[ii+2]
+    cdef double ma = self.raw_pixels[ii+3]
+
+    with nogil:
+      for i in xrange(self.w*self.h):
+        ii = 4*i
+        mb = _max(mb, self.raw_pixels[ii])
+        mg = _max(mg, self.raw_pixels[ii+1])
+        mr = _max(mr, self.raw_pixels[ii+2])
+        ma = _max(ma, self.raw_pixels[ii+3])
+
+    print('max', mr, mg, mb, ma)
+
     return
 
   @cython.wraparound(False)
@@ -121,6 +248,9 @@ cdef class Sand:
   @cython.boundscheck(False)
   @cython.nonecheck(False)
   cpdef void set_rgba(self, list rgba):
+    if not len(rgba)==4:
+      raise ValueError('rgba must be a list with four elements')
+
     cdef double rA = <double>rgba[0]
     cdef double gA = <double>rgba[1]
     cdef double bA = <double>rgba[2]
@@ -132,70 +262,6 @@ cdef class Sand:
       self.bA = bA*aA
       self.aA = aA
     return
-
-  @cython.wraparound(False)
-  @cython.boundscheck(False)
-  @cython.nonecheck(False)
-  cdef void _operator_over(self, int o) nogil:
-    # https://www.cairographics.org/operators/
-    # https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BPremultiplied%20alpha%20part%202%5D%5D
-    cdef double bB = self.raw_pixels[o]
-    cdef double gB = self.raw_pixels[o+1]
-    cdef double rB = self.raw_pixels[o+2]
-    cdef double aB = self.raw_pixels[o+3]
-
-    cdef double invaA = 1.0 - self.aA
-
-    self.raw_pixels[o] = self.bA + bB*invaA
-    self.raw_pixels[o+1] = self.gA + gB*invaA
-    self.raw_pixels[o+2] = self.rA + rB*invaA
-    self.raw_pixels[o+3] = self.aA + aB*invaA
-
-  @cython.wraparound(False)
-  @cython.boundscheck(False)
-  @cython.nonecheck(False)
-  cdef void _operator_over_mix(self, int oa, int ob) nogil:
-
-    cdef double aA = 0.01
-    cdef double bA = self.raw_pixels[oa]*aA
-    cdef double gA = self.raw_pixels[oa+1]*aA
-    cdef double rA = self.raw_pixels[oa+2]*aA
-
-    cdef double bB = self.raw_pixels[ob]
-    cdef double gB = self.raw_pixels[ob+1]
-    cdef double rB = self.raw_pixels[ob+2]
-    cdef double aB = 1.0
-
-    cdef double invaA = 1.0 - aA
-    self.raw_pixels[ob] = bA + bB*invaA
-    self.raw_pixels[ob+1] = gA + gB*invaA
-    self.raw_pixels[ob+2] = rA + rB*invaA
-    self.raw_pixels[ob+3] = aA + aB*invaA
-
-  @cython.wraparound(False)
-  @cython.boundscheck(False)
-  @cython.nonecheck(False)
-  cdef void _operator_swap(self, int oa, int ob) nogil:
-
-    cdef double bA = self.raw_pixels[oa]
-    cdef double gA = self.raw_pixels[oa+1]
-    cdef double rA = self.raw_pixels[oa+2]
-    cdef double aA = self.raw_pixels[oa+3]
-
-    cdef double bB = self.raw_pixels[ob]
-    cdef double gB = self.raw_pixels[ob+1]
-    cdef double rB = self.raw_pixels[ob+2]
-    cdef double aB = self.raw_pixels[ob+3]
-
-    self.raw_pixels[ob] = bA
-    self.raw_pixels[ob+1] = gA
-    self.raw_pixels[ob+2] = rA
-    self.raw_pixels[ob+3] = aA
-
-    self.raw_pixels[oa] = bB
-    self.raw_pixels[oa+1] = gB
-    self.raw_pixels[oa+2] = rB
-    self.raw_pixels[oa+3] = aB
 
   @cython.wraparound(False)
   @cython.boundscheck(False)
@@ -223,7 +289,7 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef void distort_dots(self, double[:,:] xya):
+  cpdef void distort_dots_swap(self, double[:,:] xya):
     cdef int w = self.w
     cdef int h = self.h
     cdef int n = len(xya)
@@ -240,7 +306,6 @@ cdef class Sand:
     cdef int i = 0
     with nogil:
       for i in xrange(n):
-
         aa = _randint(n)
         bb = _randint(n)
 
@@ -248,6 +313,44 @@ cdef class Sand:
         ay = xya[aa,1]
         bx = xya[bb,0]
         by = xya[bb,1]
+        if ax<0 or ax>=1.0 or ay<0 or ay>=1.0:
+          continue
+        if bx<0 or bx>=1.0 or by<0 or by>=1.0:
+          continue
+
+        oa = <int>floor(ay*h)*self.stride+<int>floor(ax*w)*4
+        ob = <int>floor(by*h)*self.stride+<int>floor(bx*w)*4
+
+        self._operator_swap(
+            oa,
+            ob,
+            )
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void distort_dots_wind(self, double[:,:] xya):
+    cdef int w = self.w
+    cdef int h = self.h
+    cdef int n = len(xya)
+    cdef int aa
+    cdef int bb
+
+    cdef double ax
+    cdef double ay
+    cdef double bx
+    cdef double by
+
+    cdef int oa = 0
+    cdef int ob = 0
+    cdef int i
+    with nogil:
+      for i in xrange(0, n, 2):
+        ax = xya[i,0]
+        ay = xya[i,1]
+        bx = xya[i+1,0]
+        by = xya[i+1,1]
         if ax<0 or ax>=1.0 or ay<0 or ay>=1.0:
           continue
         if bx<0 or bx>=1.0 or by<0 or by>=1.0:
@@ -303,15 +406,8 @@ cdef class Sand:
   @cython.boundscheck(False)
   @cython.nonecheck(False)
   cpdef write_to_png(self, str name):
-    cdef int i
-    cdef int ii
-    with nogil:
-      for i in xrange(self.w*self.h):
-        ii = 4*i
-        self.pixels[ii] = _double_to_char(self.raw_pixels[ii])
-        self.pixels[ii+1] = _double_to_char(self.raw_pixels[ii+1])
-        self.pixels[ii+2] = _double_to_char(self.raw_pixels[ii+2])
-        self.pixels[ii+3] = _double_to_char(self.raw_pixels[ii+3])
-
+    self._transfer_pixels()
+    # self._find_max_rgba()
+    # self._find_min_rgba()
     self.sur.write_to_png(name)
 
