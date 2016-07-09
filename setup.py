@@ -8,6 +8,7 @@ except Exception:
   from distutils.extension import Extension
 
 from Cython.Build import cythonize
+import numpy
 
 _extra = [
     '-O3',
@@ -16,6 +17,7 @@ _extra = [
 
 req = [
     'cairocffi',
+    'pillow',
     'cython>=0.24.0'
     ]
 
@@ -23,7 +25,8 @@ req = [
 extensions = [
     Extension('sand',
       sources = ['./src/sand.pyx'],
-      extra_compile_args = _extra
+      extra_compile_args = _extra,
+      include_dirs = [numpy.get_include()]
       )
     ]
 

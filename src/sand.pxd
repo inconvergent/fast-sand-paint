@@ -30,6 +30,9 @@ cdef class Sand:
   # cdef void _operator_over_mix(self, int, int) nogil
   cdef void _operator_swap(self, int, int) nogil
 
+  cdef void _find_max_rgba(self)
+  cdef void _find_min_rgba(self)
+
   cpdef void set_bg(self, list)
   cpdef void set_bg_from_image(self, str)
   cpdef void set_rgba(self, list)

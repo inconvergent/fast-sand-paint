@@ -8,6 +8,10 @@ cimport cython
 from libc.math cimport floor
 
 from helpers cimport _random
+from helpers cimport _max
+from helpers cimport _4max
+from helpers cimport _min
+from helpers cimport _4min
 from helpers cimport _randint
 from helpers cimport _char_to_double
 from helpers cimport _double_to_char
@@ -131,6 +135,54 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
+  cdef void _find_min_rgba(self):
+    #TODO: return values if i need them
+    cdef int i = 0
+    cdef int ii = 0
+    cdef double mb = self.raw_pixels[ii]
+    cdef double mg = self.raw_pixels[ii+1]
+    cdef double mr = self.raw_pixels[ii+2]
+    cdef double ma = self.raw_pixels[ii+3]
+
+    with nogil:
+      for i in xrange(self.w*self.h):
+        ii = 4*i
+        mb = _min(mb, self.raw_pixels[ii])
+        mg = _min(mg, self.raw_pixels[ii+1])
+        mr = _min(mr, self.raw_pixels[ii+2])
+        ma = _min(ma, self.raw_pixels[ii+3])
+
+    print('min', mr, mg, mb, ma)
+
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cdef void _find_max_rgba(self):
+    #TODO: return values if i need them
+    cdef int i = 0
+    cdef int ii = 0
+    cdef double mb = self.raw_pixels[ii]
+    cdef double mg = self.raw_pixels[ii+1]
+    cdef double mr = self.raw_pixels[ii+2]
+    cdef double ma = self.raw_pixels[ii+3]
+
+    with nogil:
+      for i in xrange(self.w*self.h):
+        ii = 4*i
+        mb = _max(mb, self.raw_pixels[ii])
+        mg = _max(mg, self.raw_pixels[ii+1])
+        mr = _max(mr, self.raw_pixels[ii+2])
+        ma = _max(ma, self.raw_pixels[ii+3])
+
+    print('max', mr, mg, mb, ma)
+
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
   cpdef void set_bg(self, list rgba):
     cdef int i
     cdef int ii
@@ -196,6 +248,9 @@ cdef class Sand:
   @cython.boundscheck(False)
   @cython.nonecheck(False)
   cpdef void set_rgba(self, list rgba):
+    if not len(rgba)==4:
+      raise ValueError('rgba must be a list with four elements')
+
     cdef double rA = <double>rgba[0]
     cdef double gA = <double>rgba[1]
     cdef double bA = <double>rgba[2]
@@ -352,5 +407,7 @@ cdef class Sand:
   @cython.nonecheck(False)
   cpdef write_to_png(self, str name):
     self._transfer_pixels()
+    self._find_max_rgba()
+    self._find_min_rgba()
     self.sur.write_to_png(name)
 

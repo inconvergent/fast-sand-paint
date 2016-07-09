@@ -17,6 +17,46 @@ cdef inline double _random() nogil:
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.nonecheck(False)
+cdef inline double _min(double a, double b) nogil:
+  if a<b:
+    return a
+  return b
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+cdef inline double _4min(double a, double b, double c, double d) nogil:
+  cdef int i
+  cdef double *data = [b, c, d]
+  cdef double m = a
+  for i in xrange(3):
+    if m<data[i]:
+      m = data[i]
+  return m
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+cdef inline double _max(double a, double b) nogil:
+  if a>b:
+    return a
+  return b
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+cdef inline double _4max(double a, double b, double c, double d) nogil:
+  cdef int i
+  cdef double *data = [b, c, d]
+  cdef double m = a
+  for i in xrange(3):
+    if m>data[i]:
+      m = data[i]
+  return m
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
 cdef inline int _randint(int a) nogil:
   return rand()%a
 
