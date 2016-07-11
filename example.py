@@ -41,17 +41,17 @@ def bg_img():
   from sand import Sand
   from numpy.random import random
 
-  size = 2560
+  size = 2000
   num = 10000000
 
   s = Sand(size)
 
-  s.set_bg_from_image('./data/img.jpg')
+  s.set_bg_from_image('./data/img.png')
 
   aa = random((num,2))
   aa[:,0]*=0.5
 
-  s.set_rgba(LIGHT)
+  s.set_rgba(GREEN)
   s.paint_dots(aa)
   s.write_to_png('./out_bg.png')
 
@@ -59,9 +59,9 @@ def bg_img():
 def main():
   from time import time
 
-  # t1 = time()
-  # random_dots()
-  # print('random_dots', time()-t1)
+  t1 = time()
+  random_dots()
+  print('random_dots', time()-t1)
 
   t1 = time()
   bg_img()
