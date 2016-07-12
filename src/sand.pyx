@@ -203,44 +203,40 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef void set_bg_from_image(self, str fn):
-    ## TODO: this is slow.
-    from PIL import Image
+  cpdef void set_bg_from_bw_array(self, double[:,:] bw):
     cdef int i
-    cdef int ii
     cdef int j
-    cdef int h
-    cdef int w
+    cdef int ii
 
-    cdef double r
-    cdef double g
-    cdef double b
+    cdef double x
 
-    cdef double a = 1.0
+    with nogil:
+      for i in range(self.h):
+        for j in range(self.w):
+          ii = 4*(i*self.h+j)
+          x = bw[i,j]
+          self.raw_pixels[ii] = x
+          self.raw_pixels[ii+1] = x
+          self.raw_pixels[ii+2] = x
+          self.raw_pixels[ii+3] = 1.0
+    return
 
-    cdef double scale = 1./255.
-    cdef im = Image.open(fn)
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void set_bg_from_rgb_array(self, double[:,:,:] rgb):
+    cdef int i
+    cdef int j
+    cdef int ii
 
-    w,h = im.size
-    if w!=self.w or h!=self.h:
-      raise ValueError('bg image must be same size as sand canvas')
-
-    cdef list data = list(im.convert('RGB').getdata())
-    cdef tuple triple
-
-    cdef int k = 0
-    for i in range(w):
-      for j in range(h):
-        ii = 4*(i*h+j)
-        triple = data[k]
-        r = <double>triple[0]
-        g = <double>triple[1]
-        b = <double>triple[2]
-        self.raw_pixels[ii] = b*scale
-        self.raw_pixels[ii+1] = g*scale
-        self.raw_pixels[ii+2] = r*scale
-        self.raw_pixels[ii+3] = a
-        k += 1
+    with nogil:
+      for i in range(self.h):
+        for j in range(self.w):
+          ii = 4*(i*self.h+j)
+          self.raw_pixels[ii] = rgb[i,j,2]
+          self.raw_pixels[ii+1] = rgb[i,j,1]
+          self.raw_pixels[ii+2] = rgb[i,j,0]
+          self.raw_pixels[ii+3] = 1.0
     return
 
   @cython.wraparound(False)

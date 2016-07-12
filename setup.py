@@ -17,10 +17,8 @@ _extra = [
 
 req = [
     'cairocffi',
-    'pillow',
     'cython>=0.24.0'
     ]
-
 
 extensions = [
     Extension('sand',
