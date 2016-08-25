@@ -400,6 +400,53 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
+  cpdef void paint_spheres(
+      self,
+      double[:,:] xy,
+      double[:] rr,
+      int grains
+      ):
+
+    cdef int w = self.w
+    cdef int h = self.h
+    cdef int n = len(xy)
+
+    cdef double pa
+    cdef double pb
+
+    cdef double x
+    cdef double y
+    cdef double rndx
+    cdef double rndy
+    cdef double dd
+    cdef double r
+    cdef double r2
+
+    cdef int o = 0
+    cdef int i = 0
+    cdef int k = 0
+    with nogil:
+      for k in xrange(n):
+        r = rr[k]
+        r2 = r*r
+        x = xy[k, 0]
+        y = xy[k, 1]
+        for i in xrange(grains):
+          rndx = x + (1.0-2.0*_random())*r
+          rndy = y + (1.0-2.0*_random())*r
+          dx = x-rndx
+          dy = y-rndy
+          dd = dx*dx+dy*dy
+
+          if dd>r2 or pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
+            continue
+          o = <int>floor(rndy*h)*self.stride+<int>floor(rndx*w)*4
+          self._operator_over(o)
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
   cpdef void write_to_png(self, str name, double gamma=1.0):
     self._transfer_pixels(gamma)
     # self._find_max_rgba()
