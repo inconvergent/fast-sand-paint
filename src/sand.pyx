@@ -400,7 +400,7 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef void paint_spheres(
+  cpdef void paint_circles(
       self,
       double[:,:] xy,
       double[:] rr,
@@ -410,9 +410,6 @@ cdef class Sand:
     cdef int w = self.w
     cdef int h = self.h
     cdef int n = len(xy)
-
-    cdef double pa
-    cdef double pb
 
     cdef double x
     cdef double y
@@ -438,7 +435,7 @@ cdef class Sand:
           dy = y-rndy
           dd = dx*dx+dy*dy
 
-          if dd>r2 or pa<0 or pa>=1.0 or pb<0 or pb>=1.0:
+          if dd>=r2 or rndx<0.0 or rndx>=1.0 or rndy<0.0 or rndy>=1.0:
             continue
           o = <int>floor(rndy*h)*self.stride+<int>floor(rndx*w)*4
           self._operator_over(o)
