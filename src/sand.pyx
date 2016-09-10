@@ -6,6 +6,8 @@ from __future__ import division
 cimport cython
 
 from libc.math cimport floor
+from libc.math cimport sin
+from libc.math cimport cos
 
 from helpers cimport _random
 from helpers cimport _max
@@ -21,6 +23,8 @@ from cpython cimport array
 import array
 import cairocffi as cairo
 
+cdef double PI = 3.14159265359
+cdef double TWOPI = 2.0*PI
 
 cdef class Sand:
   def __init__(self, int s):
@@ -400,7 +404,7 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
-  cpdef void paint_circles(
+  cpdef void paint_filled_circles(
       self,
       double[:,:] xy,
       double[:] rr,
@@ -436,6 +440,52 @@ cdef class Sand:
           dd = dx*dx+dy*dy
 
           if dd>=r2 or rndx<0.0 or rndx>=1.0 or rndy<0.0 or rndy>=1.0:
+            continue
+          o = <int>floor(rndy*h)*self.stride+<int>floor(rndx*w)*4
+          self._operator_over(o)
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void paint_circles(
+      self,
+      double[:,:] xy,
+      double[:] rr,
+      int grains
+      ):
+
+    cdef int w = self.w
+    cdef int h = self.h
+    cdef int n = len(xy)
+
+    cdef double x
+    cdef double y
+    cdef double rndx
+    cdef double rndy
+    # cdef double dd
+    cdef double r
+    cdef double r2
+    cdef double a
+
+    cdef int o = 0
+    cdef int i = 0
+    cdef int k = 0
+    with nogil:
+      for k in xrange(n):
+        r = rr[k]
+        r2 = r*r
+        x = xy[k, 0]
+        y = xy[k, 1]
+        for i in xrange(grains):
+          a = _random()*TWOPI
+          rndx = x + cos(a)*r
+          rndy = y + sin(a)*r
+          # dx = x-rndx
+          # dy = y-rndy
+          # dd = dx*dx+dy*dy
+
+          if rndx<0.0 or rndx>=1.0 or rndy<0.0 or rndy>=1.0:
             continue
           o = <int>floor(rndy*h)*self.stride+<int>floor(rndx*w)*4
           self._operator_over(o)

@@ -44,6 +44,8 @@ cdef class Sand:
 
   cpdef void paint_dots(self, double[:,:])
   cpdef void paint_strokes(self, double[:,:], double[:,:], int)
+
+  cpdef void paint_filled_circles(self, double[:,:], double[:] r, int grains)
   cpdef void paint_circles(self, double[:,:], double[:] r, int grains)
 
   cpdef void write_to_png(self, str, double gamma=*)
