@@ -34,6 +34,7 @@ cdef class Sand:
   cdef void _find_min_rgba(self)
 
   cpdef void set_bg(self, list)
+  cpdef void set_transparent_pixel(self)
   cpdef void set_bg_from_bw_array(self, double[:,:])
   cpdef void set_bg_from_rgb_array(self, double[:,:,:])
 

@@ -207,6 +207,22 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
+  cpdef void set_transparent_pixel(self):
+    cdef int i = 0
+
+    cdef double r = 1.0
+    cdef double a = 0.95
+
+    with nogil:
+      self.raw_pixels[i] = r*a
+      self.raw_pixels[i+1] = r*a
+      self.raw_pixels[i+2] = r*a
+      self.raw_pixels[i+3] = a
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
   cpdef void set_bg_from_bw_array(self, double[:,:] bw):
     cdef int i
     cdef int j
