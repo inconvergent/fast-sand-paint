@@ -6,7 +6,9 @@ from __future__ import division
 cimport cython
 
 from libc.math cimport floor
+from libc.math cimport ceil
 from libc.math cimport sin
+from libc.math cimport sqrt
 from libc.math cimport cos
 
 from helpers cimport _random
@@ -464,6 +466,62 @@ cdef class Sand:
   @cython.wraparound(False)
   @cython.boundscheck(False)
   @cython.nonecheck(False)
+  @cython.cdivision(True)
+  cpdef void paint_filled_circles_strokes(
+      self,
+      double[:,:] xya,
+      double[:,:] xyb,
+      double r,
+      int cmult,
+      int grains
+      ):
+
+    cdef int w = self.w
+    cdef int h = self.h
+    cdef int n = len(xya)
+
+    cdef double x
+    cdef double y
+    cdef double rndx
+    cdef double rndy
+    cdef double rndab
+    cdef double ab
+    cdef double dd
+    cdef double dx
+    cdef double dy
+    cdef double kdx
+    cdef double kdy
+    cdef double r2 = r*r
+
+    cdef int o
+    cdef int i
+    cdef int k
+    cdef int j
+    with nogil:
+      for k in xrange(n):
+        kdx = xyb[k,0] - xya[k,0]
+        kdy = xyb[k,1] - xya[k,1]
+        ab = sqrt(kdx*kdx+kdy*kdy)
+        for j in xrange(<int>ceil(ab/self.one*<double>cmult)):
+          rndab = _random()
+          x = xya[k,0] + rndab*kdx
+          y = xya[k,1] + rndab*kdy
+          for i in xrange(grains):
+            rndx = x + (1.0-2.0*_random())*r
+            rndy = y + (1.0-2.0*_random())*r
+            dx = x-rndx
+            dy = y-rndy
+            dd = dx*dx+dy*dy
+
+            if dd>=r2 or rndx<0.0 or rndx>=1.0 or rndy<0.0 or rndy>=1.0:
+              continue
+            o = <int>floor(rndy*h)*self.stride+<int>floor(rndx*w)*4
+            self._operator_over(o)
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
   cpdef void paint_circles(
       self,
       double[:,:] xy,
@@ -479,7 +537,6 @@ cdef class Sand:
     cdef double y
     cdef double rndx
     cdef double rndy
-    # cdef double dd
     cdef double r
     cdef double r2
     cdef double a
@@ -497,9 +554,6 @@ cdef class Sand:
           a = _random()*TWOPI
           rndx = x + cos(a)*r
           rndy = y + sin(a)*r
-          # dx = x-rndx
-          # dy = y-rndy
-          # dd = dx*dx+dy*dy
 
           if rndx<0.0 or rndx>=1.0 or rndy<0.0 or rndy>=1.0:
             continue
@@ -512,7 +566,5 @@ cdef class Sand:
   @cython.nonecheck(False)
   cpdef void write_to_png(self, str name, double gamma=1.0):
     self._transfer_pixels(gamma)
-    # self._find_max_rgba()
-    # self._find_min_rgba()
     self.sur.write_to_png(name)
 
