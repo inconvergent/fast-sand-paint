@@ -44,13 +44,14 @@ cdef class Sand:
   cpdef void distort_dots_wind(self, double[:,:])
 
   cpdef void paint_dots(self, double[:,:])
-  cpdef void paint_strokes(self, double[:,:], double[:,:], int)
+  cpdef void paint_strokes(self, double[:,:], double[:,:], long[:])
 
-  cpdef void paint_filled_circles(self, double[:,:], double[:] r, int)
-  cpdef void paint_filled_circles_strokes(self, double[:,:], double[:,:],
-      double, int, int)
+  cpdef void paint_filled_circles(self, double[:,:], double[:], long[:])
+  cpdef void paint_filled_circle_strokes(self, double[:,:], double[:,:],
+      double[:], long, long[:])
+  cpdef void paint_circles(self, double[:,:], double[:], long[:])
 
-  cpdef void paint_circles(self, double[:,:], double[:] r, int grains)
+  cpdef void paint_triangles(self, double[:,:], double[:,:], double[:,:], long[:])
 
   cpdef void write_to_png(self, str, double gamma=*)
 

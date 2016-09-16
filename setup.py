@@ -30,7 +30,7 @@ extensions = [
 
 setup(
     name = "fast-sand-paint",
-    version = '0.0.1',
+    version = '0.1.0',
     author = '@inconvergent',
     install_requires = req,
     zip_safe = False,

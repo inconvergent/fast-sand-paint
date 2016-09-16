@@ -389,11 +389,11 @@ cdef class Sand:
       self,
       double[:,:] xya,
       double[:,:] xyb,
-      int grains
+      long[:] grains
       ):
     cdef int w = self.w
     cdef int h = self.h
-    cdef int n = len(xya)
+    cdef long n = len(xya)
 
     cdef double pa
     cdef double pb
@@ -401,15 +401,15 @@ cdef class Sand:
     cdef double dy
     cdef double rnd
 
-    cdef int o = 0
-    cdef int i = 0
-
+    cdef int o
+    cdef long i
+    cdef long j
     with nogil:
       for i in xrange(n):
         dx = xyb[i,0]-xya[i,0]
         dy = xyb[i,1]-xya[i,1]
 
-        for j in xrange(grains):
+        for j in xrange(grains[i]):
           rnd = _random()
           pa = xya[i,0]+rnd*dx
           pb = xya[i,1]+rnd*dy
@@ -426,12 +426,12 @@ cdef class Sand:
       self,
       double[:,:] xy,
       double[:] rr,
-      int grains
+      long[:] grains
       ):
 
     cdef int w = self.w
     cdef int h = self.h
-    cdef int n = len(xy)
+    cdef long n = len(xy)
 
     cdef double x
     cdef double y
@@ -442,15 +442,15 @@ cdef class Sand:
     cdef double r2
 
     cdef int o = 0
-    cdef int i = 0
-    cdef int k = 0
+    cdef long i = 0
+    cdef long k = 0
     with nogil:
       for k in xrange(n):
         r = rr[k]
         r2 = r*r
         x = xy[k, 0]
         y = xy[k, 1]
-        for i in xrange(grains):
+        for i in xrange(grains[k]):
           rndx = x + (1.0-2.0*_random())*r
           rndy = y + (1.0-2.0*_random())*r
           dx = x-rndx
@@ -467,18 +467,19 @@ cdef class Sand:
   @cython.boundscheck(False)
   @cython.nonecheck(False)
   @cython.cdivision(True)
-  cpdef void paint_filled_circles_strokes(
+  cpdef void paint_filled_circle_strokes(
       self,
       double[:,:] xya,
       double[:,:] xyb,
-      double r,
-      int cmult,
-      int grains
+      double[:] rr,
+      long cmult,
+      long[:] grains
       ):
 
     cdef int w = self.w
     cdef int h = self.h
-    cdef int n = len(xya)
+    cdef long n = len(xya)
+    cdef long g
 
     cdef double x
     cdef double y
@@ -491,22 +492,26 @@ cdef class Sand:
     cdef double dy
     cdef double kdx
     cdef double kdy
-    cdef double r2 = r*r
+    cdef double r
+    cdef double r2
 
     cdef int o
-    cdef int i
-    cdef int k
-    cdef int j
+    cdef long i
+    cdef long k
+    cdef long j
     with nogil:
       for k in xrange(n):
         kdx = xyb[k,0] - xya[k,0]
         kdy = xyb[k,1] - xya[k,1]
         ab = sqrt(kdx*kdx+kdy*kdy)
-        for j in xrange(<int>ceil(ab/self.one*<double>cmult)):
+        r = rr[k]
+        r2 = r*r
+        g = grains[k]
+        for j in xrange(<long>ceil(ab/self.one*<double>cmult)):
           rndab = _random()
           x = xya[k,0] + rndab*kdx
           y = xya[k,1] + rndab*kdy
-          for i in xrange(grains):
+          for i in xrange(g):
             rndx = x + (1.0-2.0*_random())*r
             rndy = y + (1.0-2.0*_random())*r
             dx = x-rndx
@@ -526,12 +531,12 @@ cdef class Sand:
       self,
       double[:,:] xy,
       double[:] rr,
-      int grains
+      long[:] grains
       ):
 
     cdef int w = self.w
     cdef int h = self.h
-    cdef int n = len(xy)
+    cdef long n = len(xy)
 
     cdef double x
     cdef double y
@@ -542,15 +547,15 @@ cdef class Sand:
     cdef double a
 
     cdef int o = 0
-    cdef int i = 0
-    cdef int k = 0
+    cdef long i = 0
+    cdef long k = 0
     with nogil:
       for k in xrange(n):
         r = rr[k]
         r2 = r*r
         x = xy[k, 0]
         y = xy[k, 1]
-        for i in xrange(grains):
+        for i in xrange(grains[k]):
           a = _random()*TWOPI
           rndx = x + cos(a)*r
           rndy = y + sin(a)*r
@@ -558,6 +563,59 @@ cdef class Sand:
           if rndx<0.0 or rndx>=1.0 or rndy<0.0 or rndy>=1.0:
             continue
           o = <int>floor(rndy*h)*self.stride+<int>floor(rndx*w)*4
+          self._operator_over(o)
+    return
+
+  @cython.wraparound(False)
+  @cython.boundscheck(False)
+  @cython.nonecheck(False)
+  cpdef void paint_triangles(
+      self,
+      double[:,:] xya,
+      double[:,:] xyb,
+      double[:,:] xyc,
+      long[:] grains
+      ):
+
+    cdef int w = self.w
+    cdef int h = self.h
+    cdef long n = len(xya)
+
+    cdef double v1x
+    cdef double v1y
+    cdef double v2x
+    cdef double v2y
+    cdef double a1
+    cdef double a2
+    cdef double dd
+    cdef double ddx
+    cdef double ddy
+
+    cdef int o
+    cdef long i
+    cdef long k
+    with nogil:
+      for k in xrange(n):
+
+        v1x = xyb[k,0]-xya[k,0]
+        v1y = xyb[k,1]-xya[k,1]
+        v2x = xyc[k,0]-xya[k,0]
+        v2y = xyc[k,1]-xya[k,1]
+
+        for i in xrange(2*grains[k]):
+          a1 = _random()
+          a2 = _random()
+
+          ## discarding half the grains. improve this.
+          if a1+a2>1.0:
+            continue
+
+          ddx = v1x*a1 + v2x*a2 + xya[k,0]
+          ddy = v1y*a1 + v2y*a2 + xya[k,1]
+
+          if ddx<0.0 or ddx>=1.0 or ddy<0.0 or ddy>=1.0:
+            continue
+          o = <int>floor(ddy*h)*self.stride+<int>floor(ddx*w)*4
           self._operator_over(o)
     return
 
